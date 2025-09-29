@@ -5,6 +5,14 @@
 #include <algorithm>
 #include <iterator>
 
+
+/*
+
+Function Definitions found towards the bottom of the file. :)
+
+*/
+
+
 ////////////////////////////////////////////////////////////////////
 // Object in Dynamic Programming Matrix
 struct State {
@@ -15,7 +23,6 @@ public:
     int D;    // Delete (gap in seq1, L)
     int I;    // Insert (gap in seq2, U)
     int max;  // Max Value
-
 
     // Constructors 
     State() : M(0), D(0), I(0) {}
@@ -50,11 +57,10 @@ class Alignment {
 
 private:
 
-    std::string seq1, seq2;
-
     int n, m;
     int score = 0;
 
+    std::string seq1, seq2;
     std::vector<std::string> tb;
     std::vector<std::vector<State>> dp;
 
@@ -101,6 +107,7 @@ int main(int argc, char **argv) {
 
     // Define long options
     static struct option long_options[] = {
+        {"help", no_argument, nullptr, 'h'},
         {"type", required_argument, nullptr, 't'},
         {"mode", required_argument, nullptr, 'm'},
         {nullptr, 0, nullptr, 0}
@@ -114,6 +121,10 @@ int main(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, "t:m:", long_options, &option_index)) != -1) {
         
         switch (opt) {
+            case 'h':
+                print_help();
+                exit(1);
+
             case 't':
                 _t = std::atoi(optarg);
                 if (_t < 0 || _t > 3) {
