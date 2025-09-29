@@ -12,25 +12,26 @@ Function Definitions found towards the bottom of the file. :)
 
 */
 
-
 ////////////////////////////////////////////////////////////////////
 // Object in Dynamic Programming Matrix
 struct State {
     
 public:
 
-    int M;    // Mis/Match
-    int D;    // Delete (gap in seq1, L)
-    int I;    // Insert (gap in seq2, U)
-    int max;  // Max Value
+    int M;          // Mis/Match
+    int D;          // Delete (gap in seq1, L)
+    int I;          // Insert (gap in seq2, U)
+    int max;        // Max Value
+    bool visited;   // Visited
 
     // Constructors 
-    State() : M(0), D(0), I(0) {}
-    State(int _a) : M(_a), D(_a), I(_a), max(_a) {}
-    State(int _m, int _d, int _i) : M(_m), D(_d), I(_i) {}
+    State() : M(0), D(0), I(0), visited(false) {}
+    State(int _a) : M(_a), D(_a), I(_a), max(_a), visited(true) {}
+    State(int _m, int _d, int _i) : M(_m), D(_d), I(_i), visited(false) {}
 
     void set_max() {
         max = std::max(std::max(M, D), I);
+        visited = true;
     }
 
     // Get Possible Paths
@@ -60,12 +61,17 @@ private:
     int n, m;
     int score = 0;
 
+    int match = 1;
+    int mismatch = -1;
+    int gap = -2;
+
     std::string seq1, seq2;
     std::vector<std::string> tb;
     std::vector<std::vector<State>> dp;
 
-    void traceback(const int &i, const int &j, const int x, std::vector<std::string> &alns);
-    int align_itr(const int &match, const int &mismatch, const int &gap);
+    void align_itr();
+    void align_rec(const int i, const int j);
+    void traceback(const int i, const int j, const int x, std::vector<std::string> &alns);
     
 public:
 
@@ -84,7 +90,7 @@ public:
     }
 
     int get_score() const { return score; }
-    int set_max(const int &a, const int &b, const int &c) {
+    int get_max(const int &a, const int &b, const int &c) {
         return std::max(std::max(a, b), c);
     }
 
@@ -228,7 +234,7 @@ std::vector<std::string> read_fasta(const std::string &file) {
 
 /////////////////////////////////////////////////////////////
 // Perform Traceback
-void Alignment::traceback(const int &i, const int &j, const int x, std::vector<std::string> &alns) {
+void Alignment::traceback(const int i, const int j, const int x, std::vector<std::string> &alns) {
 
     // Initilize Alignments Vector
     if (alns.empty()) {
@@ -285,30 +291,51 @@ void Alignment::traceback(const int &i, const int &j, const int x, std::vector<s
 
 /////////////////////////////////////////////////////////////
 // Generic Dynamic Programming Implementation
-int Alignment::align_itr(const int &match, const int &mismatch, const int &gap) {
+void Alignment::align_itr() {
 
-    int m;
-
+    int s;
     for (int i = 1; i <= seq1.size(); i++) {    
         for (int j = 1; j <= seq2.size(); j++) {
 
-            m = match;
+            s = match;
             if (seq1[i - 1] != seq2[j - 1]) {
-                m = mismatch;
+                s = mismatch;
             }
 
-            dp[i][j].M = Alignment::set_max(
-                            dp[i-1][j-1].M + m,
-                            dp[i-1][j-1].D + m,
-                            dp[i-1][j-1].I + m
+            dp[i][j].M = Alignment::get_max(
+                            dp[i-1][j-1].M + s,
+                            dp[i-1][j-1].D + s,
+                            dp[i-1][j-1].I + s
                           );
             dp[i][j].D = dp[i][j-1].max + gap;
             dp[i][j].I = dp[i-1][j].max + gap;
             dp[i][j].set_max();
         }
     }
+}
 
-    return dp[seq1.size()][seq2.size()].max;
+void Alignment::align_rec(const int i, const int j) {
+
+    int s;
+    if (dp[i][j].visited == true) { return; }
+
+    align_rec(i-1, j-1);
+    align_rec(i, j-1);
+    align_rec(i-1, j);
+
+    s = match;
+    if (seq1[i - 1] != seq2[j - 1]) {
+        s = mismatch;
+    }
+
+    dp[i][j].M = Alignment::get_max(
+                    dp[i-1][j-1].M + s,
+                    dp[i-1][j-1].D + s,
+                    dp[i-1][j-1].I + s
+                  );
+    dp[i][j].D = dp[i][j-1].max + gap;
+    dp[i][j].I = dp[i-1][j].max + gap;
+    dp[i][j].set_max();
 }
 
 
@@ -316,27 +343,12 @@ int Alignment::align_itr(const int &match, const int &mismatch, const int &gap) 
 // General Alignment Call
 int Alignment::align(const std::string &method, const std::string &algo) {
         
-    int match;
-    int mismatch;
-    int gap;
-
     // Initialize Scoring Penalities and Boundary Conditions
     if (method == "nw") {
-
-        // Needleman Wunsch
-        match = 1;
-        mismatch = -1;
-        gap = -2;
-
         for (int i = 0; i <= n; i++) { dp[i][0] = State(gap * i); }
         for (int j = 0; j <= m; j++) { dp[0][j] = State(gap * j); }
 
     } else if (method == "sg") {
-
-        // Semi-global
-        match = 1;
-        mismatch = -1;
-        gap = -2;
 
         // TO DO
         if (seq1.size() > seq2.size()) {
@@ -345,6 +357,9 @@ int Alignment::align(const std::string &method, const std::string &algo) {
             for (int i = 0; i <= seq1.size(); i++) { dp[i][0] = State(gap * i); } 
         }
 
+    } else if (method == "sw") {
+        ;
+
     } else {
         std::cerr << "Error: Unknown alignment method " << method << "\n";
         exit(1);
@@ -352,13 +367,12 @@ int Alignment::align(const std::string &method, const std::string &algo) {
 
     // Perform Alignment
     if (algo == "rec") {
-        ;
+        align_rec(n, m);
     } else {
-        score = align_itr(match, mismatch, gap);
+        align_itr();
     }
-    
 
-    // print_dp_matrix();
+    score = dp[n][m].max;
 
     // Traceback Alignments
     int num_alignments = 0;
@@ -398,10 +412,8 @@ void Alignment::print_dp_matrix() const {
 // Print Alignment
 void Alignment::print_alignment() const {
 
-    int i, j;
-    int x = 0;
-    std::string aln_seq1;
-    std::string aln_seq2;
+    int i, j, x = 0;
+    std::string aln_seq1, aln_seq2;
 
     for (auto &t : tb) {
         
@@ -417,18 +429,15 @@ void Alignment::print_alignment() const {
                 aln_seq1 += seq1[i];
                 aln_seq2 += seq2[j];
                 i += 1; j += 1;
-
             } else if (c == 'I') {
                 aln_seq1 += seq1[i];
                 aln_seq2 += "_";
                 i += 1;
-
             } else if (c == 'D') {
                 aln_seq1 += "_";
                 aln_seq2 += seq2[j];
                 j += 1;
             }
-
         }
 
         std::cout << "Alignment #" << x + 1 << " (Score: " << this -> score << "):\n";
