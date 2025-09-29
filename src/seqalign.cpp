@@ -18,11 +18,11 @@ struct State {
     
 public:
 
-    int M;          // Mis/Match
-    int D;          // Delete (gap in seq1, L)
-    int I;          // Insert (gap in seq2, U)
-    int max;        // Max Value
-    bool visited;   // Visited
+    int M;           // Mis/Match
+    int D;           // Delete (gap in seq1, L)
+    int I;           // Insert (gap in seq2, U)
+    int max;         // Max Value
+    bool visited;    // Visited
 
     // Constructors 
     State() : M(0), D(0), I(0), visited(false) {}
@@ -176,8 +176,7 @@ int main(int argc, char **argv) {
     std::vector<std::string> seq2 = read_fasta(argv[optind + 1]);
 
     Alignment aln(seq1[0], seq2[0]);
-    int score = aln.align(type, mode);
-        
+    int score = aln.align(type, mode); 
     aln.print_alignment();
 
     return 0;
@@ -237,19 +236,15 @@ std::vector<std::string> read_fasta(const std::string &file) {
 void Alignment::traceback(const int i, const int j, const int x, std::vector<std::string> &alns) {
 
     // Initilize Alignments Vector
-    if (alns.empty()) {
-        alns.push_back("");
-    }
+    if (alns.empty()) { alns.push_back(""); }
 
     // End of Alignment Cases
     if (i <= 0 && j <= 0) {
         return;
-    
     } else if (i == 0 && j > 0) {
         alns[x] += "D";
         traceback(i, j - 1, x, alns);
         return;
-    
     } else if (i > 0 && j == 0) {
         alns[x] += "I";
         traceback(i - 1, j, x, alns);
@@ -274,12 +269,10 @@ void Alignment::traceback(const int i, const int j, const int x, std::vector<std
         
         if (states[y] == 'M') {
             alns[t] += "M";
-            traceback(i - 1, j - 1, t, alns);
-        
+            traceback(i - 1, j - 1, t, alns);  
         } else if (states[y] == 'I') {
             alns[t] += "I";
             traceback(i - 1, j, t, alns);
-        
         } else if (states[y] == 'D') {
             alns[t] += "D";
             traceback(i, j - 1, t, alns);
@@ -349,7 +342,6 @@ int Alignment::align(const std::string &method, const std::string &algo) {
         for (int j = 0; j <= m; j++) { dp[0][j] = State(gap * j); }
 
     } else if (method == "sg") {
-
         // TO DO
         if (seq1.size() > seq2.size()) {
             for (int j = 0; j <= seq2.size(); j++) { dp[0][j] = State(gap * j); }
@@ -358,6 +350,7 @@ int Alignment::align(const std::string &method, const std::string &algo) {
         }
 
     } else if (method == "sw") {
+        // TO DO
         ;
 
     } else {
@@ -424,7 +417,6 @@ void Alignment::print_alignment() const {
         std::reverse(str.begin(), str.end());
 
         for (const auto &c : str) {
-
             if (c == 'M') {
                 aln_seq1 += seq1[i];
                 aln_seq2 += seq2[j];
