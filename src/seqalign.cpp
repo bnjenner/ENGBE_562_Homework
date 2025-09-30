@@ -317,14 +317,14 @@ void Alignment::traceback(const int i, const int j, const int x,
     // Recurse for all maximum states (possible paths)
     for (int y = 0; y < states.size(); y++) {
 
-        t = x;  
-
         // If multiple paths
+        t = x;  
         if (y > 0) {
             alns.push_back(t_str);
-            t = alns.size() - 1; // New index
+            t = alns.size() - 1; // New aln string index
         }
-        
+
+        // Traceback other routes        
         if (states[y] == 'M') {
             alns[t] += "M";
             traceback(i - 1, j - 1, t, alns, method);
@@ -350,6 +350,7 @@ void Alignment::align_itr(const std::string &method) {
             dp[i][j].M = Alignment::score_funct(i, j, 'M', method);
             dp[i][j].D = Alignment::score_funct(i, j, 'D', method);
             dp[i][j].I = Alignment::score_funct(i, j, 'I', method);    
+           
             dp[i][j].set_max();
             Alignment::record_max(i, j, method);
         }
