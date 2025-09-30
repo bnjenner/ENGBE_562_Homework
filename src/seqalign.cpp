@@ -389,29 +389,29 @@ int Alignment::align(const std::string &method, const std::string &algo) {
     if (method == "nw") {
         for (int i = 0; i <= n; i++) { dp[i][0] = State(gap * i); }
         for (int j = 0; j <= m; j++) { dp[0][j] = State(gap * j); }
-        max_i = this -> n;
-        max_j = this -> m;
+        max_i = n;
+        max_j = m;
     } else if (method == "sg") {
-        for (int i = 0; i <= n; i++) { dp[i][0].set_max(); }
+        for (int i = 0; i <= n; i++) { dp[i][0] = State(0); }
         for (int j = 0; j <= m; j++) { dp[0][j] = State(gap * j); }
-        max_j = this -> m;
+        max_j = m;
     } else if (method == "sw") {
-        for (int i = 0; i <= n; i++) { dp[i][0].set_max(); }
-        for (int j = 0; j <= m; j++) { dp[0][j].set_max(); }
+        for (int i = 0; i <= n; i++) { dp[i][0] = State(0); }
+        for (int j = 0; j <= m; j++) { dp[0][j] = State(0); }
     } else {
         std::cerr << "Error: Unknown alignment method " << method << "\n";
         exit(1);
     }
 
-    // Perform Alignment
+    // Perform Alignment and get score
     if (algo == "rec") {
         align_rec(n, m, method);
     } else {
         align_itr(method);
     }
+    max_score = dp[max_i][max_j].max;
 
-    // Adjust Traceback Starts / Max Score for Global
-    if (method == "nw") { max_score = dp[n][m].max; }
+    // Adjust Traceback Starts if needed
     if (method == "sw") { tb_i = max_i; tb_j = max_j; }
     if (method == "sg") { tb_i = n; }
 
@@ -426,39 +426,46 @@ int Alignment::align(const std::string &method, const std::string &algo) {
 // Print Alignment
 void Alignment::print_alignment() const {
 
-    int i, j, x = 0;
-    std::string aln_seq1, aln_seq2, cons;
+    int i, j;
+    int x = 0;
+    std::string cons;
+    std::string aln_seq1;
+    std::string aln_seq2;
 
     // For each possible alignment
     for (auto &t : tb) {
         
+        cons = "";
+        aln_seq1 = "";
+        aln_seq2 = "";
         i = tb_i; j = tb_j;
-        aln_seq1 = ""; aln_seq2 = "", cons = "";
 
         // Iterate through traceback strings
         for (const auto &c : t) {
+
             if (c == 'M') {
                 aln_seq1 = seq1[i - 1] + aln_seq1;
                 aln_seq2 = seq2[j - 1] + aln_seq2;
-                if (flip) {
-                    cons = ((seq1[i - 1] == seq2[j - 1]) ? '.' : seq1[i - 1]) + cons;
+                if (seq1[i - 1] == seq2[j - 1]) {
+                    cons = '.' + cons;
                 } else {
-                    cons = ((seq1[i - 1] == seq2[j - 1]) ? '.' : seq2[j - 1]) + cons;
+                    cons = seq2[j - 1] + cons;
+                    if (flip) { cons[0] = seq1[i - 1]; }
                 }
                 i -= 1; j -= 1;
+
             } else if (c == 'I') {
                 aln_seq1 = seq1[i - 1] + aln_seq1;
                 aln_seq2 = "_" + aln_seq2;
-                if (flip) {
-                    cons = seq1[i - 1] + cons;
-                } else { cons = '-' + cons; }
+                cons = '-' + cons;    
+                if (flip) { cons[0] = seq1[i - 1]; } // Replace is output is flipped
                 i -= 1;
+
             } else if (c == 'D') {
                 aln_seq1 = "_" + aln_seq1;
                 aln_seq2 = seq2[j - 1] + aln_seq2;
-                if (flip) {
-                    cons = '-' + cons;
-                } else { cons = seq2[j - 1] + cons; }
+                cons = seq2[j - 1] + cons;
+                if (flip) { cons[0] = '-'; } // Replace is output is flipped
                 j -= 1;
             }
         }
