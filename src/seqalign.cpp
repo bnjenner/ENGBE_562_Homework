@@ -426,27 +426,38 @@ int Alignment::align(const std::string &method, const std::string &algo) {
 void Alignment::print_alignment() const {
 
     int i, j, x = 0;
-    std::string aln_seq1, aln_seq2;
+    std::string aln_seq1, aln_seq2, cons;
 
     // For each possible alignment
     for (auto &t : tb) {
         
         i = tb_i; j = tb_j;
-        aln_seq1 = ""; aln_seq2 = "";
+        aln_seq1 = ""; aln_seq2 = "", cons = "";
 
         // Iterate through traceback strings
         for (const auto &c : t) {
             if (c == 'M') {
                 aln_seq1 = seq1[i - 1] + aln_seq1;
                 aln_seq2 = seq2[j - 1] + aln_seq2;
+                if (flip) {
+                    cons = ((seq1[i - 1] == seq2[j - 1]) ? '.' : seq1[i - 1]) + cons;
+                } else {
+                    cons = ((seq1[i - 1] == seq2[j - 1]) ? '.' : seq2[j - 1]) + cons;
+                }
                 i -= 1; j -= 1;
             } else if (c == 'I') {
                 aln_seq1 = seq1[i - 1] + aln_seq1;
                 aln_seq2 = "_" + aln_seq2;
+                if (flip) {
+                    cons = seq1[i - 1] + cons;
+                } else { cons = '-' + cons; }
                 i -= 1;
             } else if (c == 'D') {
                 aln_seq1 = "_" + aln_seq1;
                 aln_seq2 = seq2[j - 1] + aln_seq2;
+                if (flip) {
+                    cons = '-' + cons;
+                } else { cons = seq2[j - 1] + cons; }
                 j -= 1;
             }
         }
@@ -454,9 +465,9 @@ void Alignment::print_alignment() const {
         // Report Score and Alignments
         std::cout << "Alignment #" << x + 1 << " (Score: " << this -> max_score << "):\n";
         if (flip) {
-            std::cout << aln_seq2 << "\n" << aln_seq1 << "\n\n";
+            std::cout << aln_seq2 << "\n" << aln_seq1 << "\n" << cons << "\n\n";
         } else {
-            std::cout << aln_seq1 << "\n" << aln_seq2 << "\n\n";
+            std::cout << aln_seq1 << "\n" << aln_seq2 << "\n" << cons << "\n\n";
         }
         x += 1;
     }
