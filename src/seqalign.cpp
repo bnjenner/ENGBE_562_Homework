@@ -409,7 +409,8 @@ int Alignment::align(const std::string &method, const std::string &algo) {
         align_itr(method);
     }
 
-    // Adjust Traceback Starts
+    // Adjust Traceback Starts / Max Score for Global
+    if (method == "nw") { max_score = dp[n][m].max; }
     if (method == "sw") { tb_i = max_i; tb_j = max_j; }
     if (method == "sg") { tb_i = n; }
 
